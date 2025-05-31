@@ -1,0 +1,19 @@
+FROM node:latest
+
+# Crée un dossier de travail dans le conteneur
+WORKDIR /app
+
+# Copie les fichiers de dépendances pour optimiser le cache Docker
+COPY package*.json .        
+
+# Installation des dépendances
+RUN npm install             
+
+# Copie tout le projet (y compris public/ et src/)
+COPY . .                    
+
+# Expose le port 3000 (React utilise 3000 par défaut)
+EXPOSE 3000
+
+# Démarre l'application React
+CMD ["npm", "start"]

@@ -1,0 +1,115 @@
+services:
+  airflow-webserver:
+    image: apache/airflow:2.8.0
+    container_name: airflow-webserver
+    environment:
+      AIRFLOW_USER: chaimae
+      AIRFLOW_PASSWORD: chaimae
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk
+      SPARK_MASTER: spark://spark-master:7077
+      AIRFLOW__WEBSERVER__SECRET_KEY: mysecret123
+    depends_on:
+      - airflow-scheduler
+      - postgres
+      - mlflow
+    command: ["bash", "-c", "airflow db init && pip install -r ./data/requirements.txt && airflow webserver"]
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./pipelines:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - mlflow_artifacts:/mlflow/artifacts
+    networks:
+      - batch
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.0
+    container_name: airflow-scheduler
+    command: scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk
+      SPARK_MASTER: spark://spark-master:7077
+      AIRFLOW__WEBSERVER__SECRET_KEY: mysecret123
+    depends_on: 
+      - postgres
+      - mlflow
+    volumes:
+      - ./pipelines:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - mlflow_artifacts:/mlflow/artifacts
+    networks:
+      - batch
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - batch
+
+  mlflow:
+    image: bitnami/mlflow:latest
+    container_name: mlflow
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    ports:
+      - "6060:5000"
+    volumes:
+      - mlflow_artifacts:/mlflow/artifacts
+    entrypoint: ""
+    user: root
+    command: >
+      sh -c "mkdir -p /mlflow/artifacts && chmod -R 777 /mlflow/artifacts &&
+      mlflow server 
+      --backend-store-uri sqlite:///mlflow.db 
+      --default-artifact-root /mlflow/artifacts 
+      --host 0.0.0.0 
+      --port 5000"
+    networks:
+      - batch
+
+  frontenddb:
+    build:
+      context: C:/Users/chaim/HealthIA/mon-app  # Chemin absolu vers ton app frontend
+      dockerfile: C:/Users/chaim/HealthIA/mon-app/dockerfile.frontend  # Le nom du Dockerfile dans le répertoire mon-app
+    ports:
+      - "3001:3000"
+    networks:
+      - batch
+    depends_on:
+      - backendd
+  
+  backendd: 
+    build:
+      context: C:/Users/chaim/HealthIA/Backend
+      dockerfile: C:/Users/chaim/HealthIA/Backend/filesdocker/Dockerfile.diabete
+    ports:
+      - "8000:8000"
+    volumes : 
+     - ./data:/datafiles 
+    
+    networks: 
+      - batch
+
+volumes:
+  data:
+  postgres_data:
+  mlflow_artifacts:
+
+networks:
+  batch:
