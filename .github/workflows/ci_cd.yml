@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - master
+      - master # Changed from main to master
   pull_request:
     branches:
-      - master
+      - master # Changed from main to master
 
 jobs:
   build-and-test:
@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        # Use Python 3.9 as indicated by your error log
+        # Setting Python version to 3.11 as seen in your CI logs for pytest.
         python-version: '3.11' 
 
     - name: Install dependencies
@@ -27,8 +27,9 @@ jobs:
       run: pip install -r Backend/requirements.txt
 
     - name: Run tests
-      # Change the working directory to ./Backend.
-      # This makes 'models/' accessible as a top-level package for imports
-      # when test_pipelinedata.py is run.
-      working-directory: ./Backend 
-      run: pytest tests/test_pipelinedata.py # Path to test file is now relative to ./Backend
+      # This step explicitly adds the 'Backend' directory to Python's import path.
+      # This ensures 'models.pipelines.pipelinedata' can be found correctly
+      # even when pytest is invoked with a path relative to the repo root.
+      run: |
+        export PYTHONPATH=$PYTHONPATH:./Backend
+        pytest Backend/tests/test_pipelinedata.py
