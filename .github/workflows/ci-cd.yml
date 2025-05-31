@@ -20,7 +20,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         # Use Python 3.9 as indicated by your error log
-        python-version: '3.9' 
+        python-version: '3.11' 
 
     - name: Install dependencies
       # Assuming requirements.txt is located inside the Backend directory
