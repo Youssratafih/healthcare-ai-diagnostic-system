@@ -1,3 +1,4 @@
+# ci/cd.yml
 name: CI-CD Pipeline
 on:
   push:
@@ -12,16 +13,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.9' # Using Python 3.9 as specified in the original workflow
       - name: Install backend dependencies
         run: |
           python -m pip install --upgrade pip
+          # Install dependencies from requirements.txt (assuming it exists and lists pandas, numpy, scikit-learn, mlflow)
           pip install -r Backend/requirements.txt
-          pip install pytest  # Ajout explicite pour garantir pytest
+          pip install pytest # Explicitly install pytest to ensure it's available
       - name: Run backend tests
+        # The command for pytest is correct when run from the repository root
         run: |
           pytest Backend/tests/test_pipelinedata.py
-      - name: Run preprocessing
+      - name: Run preprocessing # This step seems to just run the DAG script, which defines the DAG
         run: |
           python Backend/pipelinedata.py
 
@@ -34,7 +37,7 @@ jobs:
         with:
           node-version: '18'
       - name: Install frontend dependencies
-        working-directory: ./mon-app
+        working-directory: ./mon-app # Assumes 'mon-app' is the frontend directory
         run: npm install
       - name: Run frontend tests
         working-directory: ./mon-app
